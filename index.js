@@ -87,7 +87,10 @@ FanLightAccessory.prototype.checkIn = function(callback, callbackMode) {
     urlFragment = "update";
   } else {
     urlFragment = "status";
-    if (this.isCacheFresh()) callback(null, this.stateCache[callbackMode]);
+    if (this.isCacheFresh()) {
+      callback(null, this.stateCache[callbackMode]);
+      return;
+    }
   }
 
   that = this;
