@@ -42,7 +42,7 @@ FanLightAccessory.prototype.getRelays = function(value, callback) {
       if (error) {
         callback(error);
       } else if (response.statusCode == 200) {
-        logger("INFO RETND BY STATUS API: " + JSON.stringify(body));
+        logger("INFO RETND BY STATUS API: " + body.toString());
         callback(null, body);
       } else {
         callback(
