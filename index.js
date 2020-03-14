@@ -43,7 +43,7 @@ FanLightAccessory.prototype.getRelays = function(value, callback) {
         callback(error);
       } else if (response.statusCode == 200) {
         logger("INFO RETND BY STATUS API: " + JSON.stringify(body));
-        callback(null, body);
+        callback(null, body.speed);
       } else {
         callback(
           new Error(
@@ -171,7 +171,19 @@ FanLightAccessory.prototype.getServices = function() {
     .on("get", this.getLightOn.bind(this))
     .on("set", this.setLightOn.bind(this));
 
-  return [this.fanService, this.lightService];
+
+  var informationService = new Service.AccessoryInformation();
+
+  informationService
+    .setCharacteristic(Characteristic.Manufacturer, "Ben Carroll")
+    .setCharacteristic(Characteristic.Model, "RF Fan API")
+    .setCharacteristic(
+      Characteristic.SerialNumber,
+      "RF-API-" + this.name
+    );
+
+
+  return [informationService, this.fanService, this.lightService];
 };
 
 FanLightAccessory.prototype.getFanOn = function(callback) {
@@ -195,13 +207,14 @@ FanLightAccessory.prototype.setFanOn = function(value, callback) {
 FanLightAccessory.prototype.getFanSpeed = function(callback) {
   this.log.info("getFanSpeed called.");
   this.getFanState(function(error, state) {
-    callback(null, state && state.speed);
+    callback(null, state.speed);
   });
 };
 
 FanLightAccessory.prototype.setFanSpeed = function(value, callback) {
   this.log.info("setFanSpeed called. Setting fan speed to " + value);
   this.state.speed = value;
+  this.state.power = true;
   this.setFanState(this.state, callback);
 };
 
