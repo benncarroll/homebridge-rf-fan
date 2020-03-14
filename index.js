@@ -153,7 +153,7 @@ FanLightAccessory.prototype.getServices = function() {
 
 FanLightAccessory.prototype.getFanOn = function(callback) {
   this.log.info('getFanOn called.')
-  this.getFanState(function(error, state) {
+  this.getFanState('on', function(error, state) {
     callback(null, state && state.power);
   });
 };
@@ -163,7 +163,7 @@ FanLightAccessory.prototype.setFanOn = function(value, callback) {
   if (this.state.power != value) {
     this.log.info('Set fan state to: ' + value);
     this.state.power = value;
-    this.setFanState(this.state, callback);
+    this.setFanState('on', this.state, callback);
   } else {
     callback(null);
   }
@@ -171,7 +171,7 @@ FanLightAccessory.prototype.setFanOn = function(value, callback) {
 
 FanLightAccessory.prototype.getFanSpeed = function(callback) {
   this.log.info('getFanSpeed called.')
-  this.getFanState(function(error, state) {
+  this.getFanState('speed', function(error, state) {
     callback(null, state && state.speed);
   });
 };
@@ -179,7 +179,7 @@ FanLightAccessory.prototype.getFanSpeed = function(callback) {
 FanLightAccessory.prototype.setFanSpeed = function(value, callback) {
   this.log.info('setFanSpeed called. Setting fan speed to ' + value)
   this.state.speed = value;
-  this.setFanState(this.state, callback);
+  this.setFanState('speed', this.state, callback);
 };
 
 FanLightAccessory.prototype.getLightOn = function(callback) {
