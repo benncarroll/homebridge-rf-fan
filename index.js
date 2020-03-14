@@ -7,11 +7,7 @@ var Characteristic;
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  homebridge.registerAccessory(
-    "homebridge-rfremote-fan",
-    "RF-Remote Fan",
-    FanLightAccessory
-  );
+  homebridge.registerAccessory("homebridge-rf-fan", "RF-Remote Fan", FanLightAccessory);
 };
 
 function FanLightAccessory(log, config) {
@@ -19,128 +15,17 @@ function FanLightAccessory(log, config) {
 
   this.host = config.host;
   this.name = config.name;
-  this.id = config.id;
+  this.device_id = config.id;
+  this.speeds = config.speeds;
   this.light_name = config.light_name || this.name + " Light";
 
-  this.state = {
-    power: false,
-    speed: 25
+  this.stateCache = {
+    "light-on": 0,
+    "fan-on": 0,
+    "fan-speed": 25
   };
+  this.lastCacheRefresh = 0;
 }
-
-FanLightAccessory.prototype.getRelays = function(value, callback) {
-  logger = this.log.info.bind(this);
-  logger("INFO ASKED OF STATUS API: " + JSON.stringify(value));
-  request(
-    {
-      url: "http://" + this.host + "/api/status",
-      method: "GET",
-      json: true,
-      body: value
-    },
-    function(error, response, body) {
-      if (error) {
-        callback(error);
-      } else if (response.statusCode == 200) {
-        logger("INFO RETND BY STATUS API: " + JSON.stringify(body));
-        callback(null, body.speed);
-      } else {
-        callback(
-          new Error(
-            "HTTP response " + response.statusCode + ": " + JSON.stringify(body)
-          )
-        );
-      }
-    }
-  );
-};
-
-FanLightAccessory.prototype.updateRelays = function(value, callback) {
-  this.log.info("updateRelays called. Request body: " + value);
-
-  request(
-    {
-      url: "http://" + this.host + "/api/update",
-      method: "GET",
-      json: true,
-      body: value
-    },
-    function(error, response, body) {
-      if (error) {
-        callback(error);
-      } else if (response.statusCode == 200) {
-        callback(null);
-      } else {
-        callback(
-          new Error(
-            "HTTP response " + response.statusCode + ": " + JSON.stringify(body)
-          )
-        );
-      }
-    }
-  );
-};
-
-FanLightAccessory.prototype.getFanState = function(callback) {
-  info = {
-    id: this.id
-  };
-  this.getRelays(info, (error, data) => {
-    if (error) {
-      callback(error);
-    } else {
-      var state = {};
-      speed = data["speed"];
-      if (speed == 3) {
-        state.power = true;
-        state.speed = 100;
-      } else if (speed == 2) {
-        state.power = true;
-        state.speed = 50;
-      } else if (speed == 1) {
-        state.power = true;
-        state.speed = 25;
-      } else {
-        state.power = false;
-        state.speed = 25;
-      }
-      // state.temperature = data.temperature;
-      this.log.info(
-        "getFanState called. Retreived fan speed as: " + state.speed
-      );
-      this.state = state;
-      callback(null, state);
-    }
-  });
-};
-
-FanLightAccessory.prototype.setFanState = function(state, callback) {
-  var relay;
-  if (state.power && state.speed > 50) {
-    relay = 3;
-  } else if (state.power && state.speed > 25) {
-    relay = 2;
-  } else if (state.power && state.speed > 0) {
-    relay = 1;
-  } else {
-    relay = 0;
-  }
-  this.log.info("setFanState called. Setting fan state to " + relay);
-
-  var update1 = {
-    id: this.id,
-    state: relay
-  };
-
-  this.updateRelays(update1, error => {
-    if (error) {
-      callback(error);
-      return;
-    } else {
-      callback();
-    }
-  });
-};
 
 FanLightAccessory.prototype.identify = function(callback) {
   this.log("Identify requested!");
@@ -171,72 +56,82 @@ FanLightAccessory.prototype.getServices = function() {
     .on("get", this.getLightOn.bind(this))
     .on("set", this.setLightOn.bind(this));
 
-
   var informationService = new Service.AccessoryInformation();
-
   informationService
     .setCharacteristic(Characteristic.Manufacturer, "Ben Carroll")
     .setCharacteristic(Characteristic.Model, "RF Fan API")
-    .setCharacteristic(
-      Characteristic.SerialNumber,
-      "RF-API-" + this.name
-    );
-
+    .setCharacteristic(Characteristic.SerialNumber, "RF-API-" + this.name);
 
   return [informationService, this.fanService, this.lightService];
 };
 
-FanLightAccessory.prototype.getFanOn = function(callback) {
-  this.log.info("getFanOn called.");
-  this.getFanState(function(error, state) {
-    callback(null, state && state.power);
-  });
+FanLightAccessory.prototype.getDeviceChar = function(mode, callback) {
+  this.checkIn(callback, undefined, mode);
 };
 
-FanLightAccessory.prototype.setFanOn = function(value, callback) {
-  this.log.info("setFanOn called. Setting fan power to " + value);
-  if (this.state.power != value) {
-    this.log.info("Set fan state to: " + value);
-    this.state.power = value;
-    this.setFanState(this.state, callback);
+FanLightAccessory.prototype.setDeviceChar = function(mode, value, callback) {
+  this.stateCache[mode] = value;
+  this.checkIn(callback, this.stateCache);
+};
+
+FanLightAccessory.prototype.isCacheFresh = function() {
+  return this.lastCacheRefresh > +new Date() - 5000;
+};
+
+FanLightAccessory.prototype.checkIn = function(callback, state, callbackMode) {
+  body = {
+    id: this.device_id
+  };
+  if (state) {
+    body["sync"] = state;
+    urlFragment = "update";
   } else {
-    callback(null);
+    urlFragment = "status";
+    if (this.isCacheFresh()) callback(null, this.stateCache[callbackMode]);
   }
+
+  that = this;
+  this.log.info("API Request made. Body: " + JSON.stringify(body));
+  request(
+    {
+      url: "http://" + this.host + "/apiv2/" + urlFragment,
+      method: "GET",
+      json: true,
+      body: body
+    },
+    function(error, response, body) {
+      if (error) {
+        callback(error);
+      } else {
+        if (response.statusCode == 200) {
+          that.log.info("API Request result:" + JSON.stringify(body));
+        } else {
+          that.log.error(new Error("HTTP response " + response.statusCode + ": " + JSON.stringify(body)));
+        }
+        that.stateCache(body.sync);
+        that.lastCacheRefresh = +new Date();
+        callback(null, that.stateCache[callbackMode]);
+      }
+    }
+  );
 };
 
+// Methods called by homebridge, redirecting to get/setDeviceChar
+FanLightAccessory.prototype.getFanOn = function(callback) {
+  this.getDeviceChar("fan-on", callback);
+};
+FanLightAccessory.prototype.setFanOn = function(value, callback) {
+  this.setDeviceChar("fan-on", value, callback);
+};
 FanLightAccessory.prototype.getFanSpeed = function(callback) {
-  this.log.info("getFanSpeed called.");
-  this.getFanState(function(error, state) {
-    callback(null, state.speed);
-  });
+  this.getDeviceChar("fan-speed", callback);
 };
-
 FanLightAccessory.prototype.setFanSpeed = function(value, callback) {
-  this.log.info("setFanSpeed called. Setting fan speed to " + value);
-  this.state.speed = value;
-  this.state.power = true;
-  this.setFanState(this.state, callback);
+  this.setDeviceChar("fan-speed", value, callback);
 };
-
 FanLightAccessory.prototype.getLightOn = function(callback) {
-  this.log.info("getLightOn called.");
-  this.getRelays(
-    {
-      id: this.id,
-      light: 1
-    },
-    callback
-  );
+  this.getDeviceChar("light-on", callback);
 };
-
-FanLightAccessory.prototype.setLightOn = function(newValue, callback) {
-  this.log.info("setLightOn called. Setting light state to: " + newValue);
-  this.updateRelays(
-    {
-      id: this.id,
-      light: 1,
-      state: newValue
-    },
-    callback
-  );
+FanLightAccessory.prototype.setLightOn = function(value, callback) {
+  this.setDeviceChar("light-on", value, callback);
 };

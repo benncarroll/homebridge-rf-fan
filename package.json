@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-rfremote-fan",
+  "name": "homebridge-rf-fan",
   "version": "0.0.1",
   "main": "index.js",
   "keywords": [
