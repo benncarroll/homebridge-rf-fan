@@ -29,7 +29,7 @@ function FanLightAccessory(log, config) {
 }
 
 FanLightAccessory.prototype.getRelays = function(value, callback) {
-  logger = this.log.info;
+  logger = this.log.info.bind(this);
   logger("INFO ASKED OF STATUS API: " + JSON.stringify(value));
   request(
     {
