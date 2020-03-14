@@ -66,24 +66,24 @@ FanLightAccessory.prototype.getServices = function() {
 };
 
 FanLightAccessory.prototype.getDeviceChar = function(mode, callback) {
-  this.checkIn(callback, undefined, mode);
+  this.checkIn(callback, mode);
 };
 
 FanLightAccessory.prototype.setDeviceChar = function(mode, value, callback) {
   this.stateCache[mode] = value;
-  this.checkIn(callback, this.stateCache);
+  this.checkIn(callback, "update");
 };
 
 FanLightAccessory.prototype.isCacheFresh = function() {
   return this.lastCacheRefresh > +new Date() - 5000;
 };
 
-FanLightAccessory.prototype.checkIn = function(callback, state, callbackMode) {
+FanLightAccessory.prototype.checkIn = function(callback, callbackMode) {
   body = {
     id: this.device_id
   };
-  if (state) {
-    body["sync"] = state;
+  if (callbackMode == "update") {
+    body["sync"] = this.stateCache;
     urlFragment = "update";
   } else {
     urlFragment = "status";
@@ -108,9 +108,9 @@ FanLightAccessory.prototype.checkIn = function(callback, state, callbackMode) {
         } else {
           that.log.error(new Error("HTTP response " + response.statusCode + ": " + JSON.stringify(body)));
         }
-        that.stateCache(body.sync);
+        that.stateCache = body.sync;
         that.lastCacheRefresh = +new Date();
-        callback(null, that.stateCache[callbackMode]);
+        callback(null, callbackMode == "update" ? undefined : that.stateCache[callbackMode]);
       }
     }
   );
