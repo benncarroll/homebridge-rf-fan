@@ -22,7 +22,7 @@ function FanLightAccessory(log, config) {
   this.stateCache = {
     "light-on": 0,
     "fan-on": 0,
-    "fan-speed": 25
+    "fan-speed": 0
   };
   this.lastCacheRefresh = 0;
 }
@@ -43,8 +43,8 @@ FanLightAccessory.prototype.getServices = function() {
     .getCharacteristic(Characteristic.RotationSpeed)
     .setProps({
       minValue: 0,
-      maxValue: 100,
-      minStep: 25
+      maxValue: Math.floor(100 / this.speeds) * this.speeds,
+      minStep: Math.floor(100 / this.speeds)
     })
     .on("get", this.getFanSpeed.bind(this))
     .on("set", this.setFanSpeed.bind(this));
