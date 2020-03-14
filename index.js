@@ -29,8 +29,8 @@ function FanLightAccessory(log, config) {
 }
 
 FanLightAccessory.prototype.getRelays = function(value, callback) {
-  this.log.info("INFO ASKED OF STATUS API: " + JSON.stringify(value));
   logger = this.log.info;
+  logger("INFO ASKED OF STATUS API: " + JSON.stringify(value));
   request(
     {
       url: "http://" + this.host + "/api/status",
@@ -42,7 +42,7 @@ FanLightAccessory.prototype.getRelays = function(value, callback) {
       if (error) {
         callback(error);
       } else if (response.statusCode == 200) {
-        logger("INFO RETND BY STATUS API: " + body.toString());
+        logger("INFO RETND BY STATUS API: " + body);
         callback(null, body);
       } else {
         callback(
