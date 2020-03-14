@@ -64,13 +64,13 @@ FanLightAccessory.prototype.updateRelays = function(value, callback) {
 
 FanLightAccessory.prototype.getFanState = function(callback) {
   info = {
-    "id": this.id
+    id: this.id
   };
   this.getRelays(info, (error, data) => {
     if (error) {
       callback(error);
     } else {
-      var state = {}
+      var state = {};
       speed = data["speed"];
       if (speed == 3) {
         state.power = true;
@@ -86,7 +86,9 @@ FanLightAccessory.prototype.getFanState = function(callback) {
         state.speed = 25;
       }
       // state.temperature = data.temperature;
-      this.log.info("getFanState called. Retreived fan speed as: " + state.speed);
+      this.log.info(
+        "getFanState called. Retreived fan speed as: " + state.speed
+      );
       this.state = state;
       callback(null, state);
     }
@@ -153,7 +155,7 @@ FanLightAccessory.prototype.getServices = function() {
 
 FanLightAccessory.prototype.getFanOn = function(callback) {
   this.log.info('getFanOn called.')
-  this.getFanState('on', function(error, state) {
+  this.getFanState(function(error, state) {
     callback(null, state && state.power);
   });
 };
@@ -163,7 +165,7 @@ FanLightAccessory.prototype.setFanOn = function(value, callback) {
   if (this.state.power != value) {
     this.log.info('Set fan state to: ' + value);
     this.state.power = value;
-    this.setFanState('on', this.state, callback);
+    this.setFanState(this.state, callback);
   } else {
     callback(null);
   }
@@ -171,7 +173,7 @@ FanLightAccessory.prototype.setFanOn = function(value, callback) {
 
 FanLightAccessory.prototype.getFanSpeed = function(callback) {
   this.log.info('getFanSpeed called.')
-  this.getFanState('speed', function(error, state) {
+  this.getFanState(function(error, state) {
     callback(null, state && state.speed);
   });
 };
@@ -179,7 +181,7 @@ FanLightAccessory.prototype.getFanSpeed = function(callback) {
 FanLightAccessory.prototype.setFanSpeed = function(value, callback) {
   this.log.info('setFanSpeed called. Setting fan speed to ' + value)
   this.state.speed = value;
-  this.setFanState('speed', this.state, callback);
+  this.setFanState(this.state, callback);
 };
 
 FanLightAccessory.prototype.getLightOn = function(callback) {
