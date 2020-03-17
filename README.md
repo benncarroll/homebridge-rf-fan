@@ -37,5 +37,5 @@ This doc assumes you alreayd have homebridge up and running, as well as [the API
 | light_name | Optional. Name of Light. If not set, will be `name + " Light"`                                      |
 | host       | Required. IP Address & Port of [API Instance](https://github.com/benncarroll/homebridge-rf-fan-api) |
 | id         | Required. Device ID as configured on API (One API instance can support multiple fans)               |
-| speeds     | Required. Number of fan speeds, e.g. 3 for Fan with Off, __Low_, __Med__, __High__                  |
+| speeds     | Required. Number of fan speeds, e.g. 3 for Fan with Off, __Low__, __Med__, __High__                  |
 
