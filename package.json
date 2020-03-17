@@ -1,6 +1,6 @@
 {
-  "name": "homebridge-rf-fan",
-  "version": "0.0.1",
+  "name": "@benncarroll/homebridge-rf-fan",
+  "version": "0.1.0",
   "main": "index.js",
   "keywords": [
     "homebridge-plugin"
@@ -9,7 +9,21 @@
     "homebridge": ">=0.2.0"
   },
   "dependencies": {
-    "locks": "^0.2.2",
     "request": "^2.74.0"
-  }
+  },
+  "description": "Homebridge plugin for utilising RF-controllable fans.",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benncarroll/homebridge-rf-fan.git"
+  },
+  "author": "Ben Carroll",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benncarroll/homebridge-rf-fan/issues"
+  },
+  "homepage": "https://github.com/benncarroll/homebridge-rf-fan#readme"
 }
